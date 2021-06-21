@@ -45,7 +45,7 @@ class ResultActivity : AppCompatActivity() {
         activity.resultText.text = "$correctAnswers / 5"
 
         textForSharing = """
-            You answered $correctAnswers correct
+            You have $correctAnswers correct
             answers of 5.
             
             
