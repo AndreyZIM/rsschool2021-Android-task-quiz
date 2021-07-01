@@ -4,7 +4,6 @@ import android.annotation.SuppressLint
 import android.content.Context
 import android.os.Build
 import android.os.Bundle
-import android.view.ContextThemeWrapper
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -15,8 +14,6 @@ import androidx.fragment.app.Fragment
 import com.rsschool.quiz.databinding.FragmentQuizBinding
 
 class FragmentQuiz : Fragment() {
-
-    // здесь все сделано максимально коряво, поэтому сильно по попе не бейте ;)
 
     private var _binding: FragmentQuizBinding? = null
     private val binding get() = _binding!!
@@ -33,35 +30,32 @@ class FragmentQuiz : Fragment() {
         container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View {
-//        context?.theme?.applyStyle(R.style.Theme_Quiz_Second, true)
         _binding = FragmentQuizBinding.inflate(inflater, container, false)
-
-        val questionNumber = arguments?.getInt("QUESTION_NUMBER")
-        val currentOption = arguments?.getInt("CURRENT_OPTION")
-
+        val questionNumber = arguments?.getInt(QUESTION_NUMBER_KEY)
+        val currentOption = arguments?.getInt(CURRENT_OPTION_KEY)
         binding.nextButton.isEnabled = false
+
         showQuestion(questionNumber, currentOption)
 
         binding.radioGroup.setOnCheckedChangeListener { _, _ ->
             binding.nextButton.isEnabled = true
         }
         binding.nextButton.setOnClickListener {
-            move(1)
+            communicator?.openNextQuestion(getCheckedOption())
         }
         binding.previousButton.setOnClickListener {
-            move(0)
+            communicator?.openPreviousQuestion(getCheckedOption())
         }
         binding.toolbar.setNavigationOnClickListener {
-            move(0)
+            communicator?.openPreviousQuestion(getCheckedOption())
         }
 
         val callback = object : OnBackPressedCallback(true) {
             override fun handleOnBackPressed() {
                 if (questionNumber == 0) activity?.finish()
-                else move(0)
+                else communicator?.openPreviousQuestion(getCheckedOption())
             }
         }
-
         requireActivity().onBackPressedDispatcher.addCallback(viewLifecycleOwner, callback)
 
         return binding.root
@@ -77,30 +71,18 @@ class FragmentQuiz : Fragment() {
         _binding = null
     }
 
-    private fun move(direction: Int) {
-        val optionList = mutableListOf(
+    private fun getCheckedOption(): Int {
+        val optionList = listOf(
             binding.optionOne,
             binding.optionTwo,
             binding.optionThree,
             binding.optionFour,
             binding.optionFive
         )
-        if (direction == 1) {
-            for (i in optionList.indices)
-                if (optionList[i].isChecked) {
-                    communicator?.openNextQuestion(i)
-                    break
-                }
-        } else {
-            var checked = false
-            for (i in optionList.indices)
-                if (optionList[i].isChecked) {
-                    communicator?.openPreviousQuestion(i)
-                    checked = true
-                    break
-                }
-            if (!checked) communicator?.openPreviousQuestion(-1)
-        }
+        var checkedOptionIndex = -1
+        for (i in optionList.indices)
+            if (optionList[i].isChecked) checkedOptionIndex = i
+        return checkedOptionIndex
     }
 
     @SuppressLint("SetTextI18n")
@@ -110,7 +92,8 @@ class FragmentQuiz : Fragment() {
         val questionList = dbHelper.getAllQuestions()
         val currentQuestion = questionNumber?.let { questionList[it] }
         binding.question.text = currentQuestion?.getQuestion()
-        val optionList = mutableListOf(
+
+        val optionList = listOf(
             binding.optionOne,
             binding.optionTwo,
             binding.optionThree,
@@ -124,11 +107,15 @@ class FragmentQuiz : Fragment() {
             currentQuestion?.getOption4(),
             currentQuestion?.getOption5()
         )
-        for (i in optionList.indices) optionList[i].text = optionTextList[i]
-        if (currentOption != null && currentOption >= 0) {
-            optionList[currentOption].isChecked = true
-            binding.nextButton.isEnabled = true
+
+        for (i in optionList.indices) {
+            optionList[i].text = optionTextList[i]
+            if (currentOption == i) {
+                optionList[i].isChecked = true
+                binding.nextButton.isEnabled = true
+            }
         }
+
         if (questionNumber == 0) {
             binding.previousButton.isEnabled = false
             binding.toolbar.navigationIcon = null
@@ -143,10 +130,13 @@ class FragmentQuiz : Fragment() {
         fun newInstance(questionNumber: Int, currentOption: Int): FragmentQuiz {
             val fragment = FragmentQuiz()
             fragment.arguments = bundleOf(
-                "QUESTION_NUMBER" to questionNumber,
-                "CURRENT_OPTION" to currentOption
+                QUESTION_NUMBER_KEY to questionNumber,
+                CURRENT_OPTION_KEY to currentOption
             )
             return fragment
         }
+
+        const val QUESTION_NUMBER_KEY = "QUESTION_NUMBER"
+        const val CURRENT_OPTION_KEY = "CURRENT_OPTION"
     }
 }

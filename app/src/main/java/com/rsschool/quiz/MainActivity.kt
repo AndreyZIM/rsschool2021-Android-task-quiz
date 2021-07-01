@@ -10,7 +10,6 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         val activity = ActivityMainBinding.inflate(layoutInflater)
         setContentView(activity.root)
-
         activity.buttonStart.setOnClickListener {
             startQuiz()
         }

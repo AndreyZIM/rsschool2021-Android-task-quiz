@@ -1,6 +1,5 @@
 package com.rsschool.quiz
 
-import android.annotation.SuppressLint
 import android.content.Intent
 import android.os.Build
 import androidx.appcompat.app.AppCompatActivity
@@ -31,16 +30,16 @@ class QuizActivity : AppCompatActivity(), Communicator {
         val activity = ActivityQuizBinding.inflate(layoutInflater)
         setContentView(activity.root)
         colorsList = listOf(
-            ContextCompat.getColor(this, R.color.deep_orange_100_dark),
-            ContextCompat.getColor(this, R.color.yellow_100_dark),
-            ContextCompat.getColor(this, R.color.light_green_100_dark),
-            ContextCompat.getColor(this, R.color.cyan_100_dark),
-            ContextCompat.getColor(this, R.color.deep_purple_100_dark),
+            ContextCompat.getColor(this, R.color.light_green_100_light),
+            ContextCompat.getColor(this, R.color.deep_orange_100_light),
+            ContextCompat.getColor(this, R.color.yellow_100_light),
+            ContextCompat.getColor(this, R.color.cyan_100_light),
+            ContextCompat.getColor(this, R.color.deep_purple_100_light)
         )
         val dbHelper = QuizDbHelper(this)
         val questionList = dbHelper.getAllQuestions()
         questionCountTotal = questionList.size
-        openQuestion(0, -1)
+        openQuestion(0)
         setTheme(stylesList[0])
         window.statusBarColor = colorsList[0]
     }
@@ -51,7 +50,7 @@ class QuizActivity : AppCompatActivity(), Communicator {
         questionCounter++
         if (questionCounter < questionCountTotal) {
             setTheme(stylesList[questionCounter])
-            openQuestion(questionCounter, answerBuffer[questionCounter])
+            openQuestion(questionCounter)
             window.statusBarColor = colorsList[questionCounter]
         } else showResult()
     }
@@ -61,13 +60,14 @@ class QuizActivity : AppCompatActivity(), Communicator {
         questionCounter--
         if (questionCounter >= 0) {
             setTheme(stylesList[questionCounter])
-            openQuestion(questionCounter, answerBuffer[questionCounter])
+            openQuestion(questionCounter)
             window.statusBarColor = colorsList[questionCounter]
         }
     }
 
-    private fun openQuestion(questionNumber: Int, currentOption: Int) {
-        val fragment: Fragment = FragmentQuiz.newInstance(questionNumber, currentOption)
+    private fun openQuestion(questionNumber: Int) {
+        val fragment: Fragment =
+            FragmentQuiz.newInstance(questionNumber, answerBuffer[questionNumber])
         supportFragmentManager.beginTransaction()
             .replace(R.id.container, fragment)
             .commit()
@@ -76,11 +76,14 @@ class QuizActivity : AppCompatActivity(), Communicator {
     @RequiresApi(Build.VERSION_CODES.P)
     private fun showResult() {
         val intent = Intent(this, ResultActivity::class.java)
-        intent.putExtra("FIRST_ANSWER", answerBuffer[0])
-        intent.putExtra("SECOND_ANSWER", answerBuffer[1])
-        intent.putExtra("THIRD_ANSWER", answerBuffer[2])
-        intent.putExtra("FOURTH_ANSWER", answerBuffer[3])
-        intent.putExtra("FIFTH_ANSWER", answerBuffer[4])
+        val mBundle = bundleOf(
+            "FIRST_ANSWER" to answerBuffer[0],
+            "SECOND_ANSWER" to answerBuffer[1],
+            "THIRD_ANSWER" to answerBuffer[2],
+            "FOURTH_ANSWER" to answerBuffer[3],
+            "FIFTH_ANSWER" to answerBuffer[4]
+        )
+        intent.putExtras(mBundle)
         startActivity(intent)
     }
 }
